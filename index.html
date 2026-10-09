@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<meta name="description" content="A single-file demo of mobile HTML input type, inputmode and enterkeyhint combinations.">
+<title>Mobile Input &amp; Keyboard Demo</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #181b22;
+    --card-2: #1f232c;
+    --border: #2a2f3a;
+    --text: #e7eaf0;
+    --muted: #9aa3b2;
+    --accent: #7dd3fc;
+    --accent-2: #a5b4fc;
+    --ok: #86efac;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    background:
+      radial-gradient(1200px 600px at 100% -10%, #1b2230 0%, transparent 55%),
+      radial-gradient(900px 500px at -10% 0%, #1a1f2b 0%, transparent 50%),
+      var(--bg);
+    color: var(--text);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Microsoft YaHei",
+      "Noto Sans SC", sans-serif;
+    -webkit-text-size-adjust: 100%;
+    padding: 0 0 calc(96px + env(safe-area-inset-bottom));
+  }
+
+  header {
+    padding: 24px 18px 10px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .header-top > div:first-child { flex: 1; min-width: 0; }
+
+  h1 {
+    font-size: 1.55rem;
+    line-height: 1.2;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+
+  .lede { color: var(--muted); margin: 0; font-size: 0.95rem; }
+
+  /* Language switch */
+  .lang-switch {
+    flex: none;
+    display: inline-flex;
+    padding: 3px;
+    gap: 3px;
+    background: #0b0e14;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .lang-switch button {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.8rem;
+    padding: 6px 11px;
+    border-radius: 7px;
+    cursor: pointer;
+    min-height: 32px;
+  }
+  .lang-switch button[aria-pressed="true"] {
+    background: var(--accent);
+    color: #0b0e14;
+    font-weight: 700;
+  }
+
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 8px 18px 0;
+    display: grid;
+    gap: 16px;
+  }
+  /* Let grid/flex children shrink instead of forcing the page wider */
+  main > section { min-width: 0; }
+
+  section {
+    background: linear-gradient(180deg, var(--card), var(--card-2));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    overflow-x: clip;
+  }
+
+  h2 {
+    font-size: 1.05rem;
+    margin: 0 0 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    background: rgba(125, 211, 252, 0.14);
+    color: var(--accent);
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex: none;
+  }
+
+  .section-note {
+    color: var(--muted);
+    font-size: 0.86rem;
+    margin: 0 0 14px;
+  }
+
+  .field { margin: 0 0 16px; }
+  .field:last-child { margin-bottom: 0; }
+
+  .field-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .field-name { font-weight: 600; font-size: 0.92rem; }
+
+  .hint { color: var(--muted); font-size: 0.78rem; }
+
+  code.snippet {
+    display: block;
+    margin: 0 0 8px;
+    padding: 8px 10px;
+    background: #0b0e14;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    color: #cbd5e1;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  code.snippet .k { color: var(--accent-2); }
+  code.snippet .v { color: var(--ok); }
+
+  .snippet-row { display: flex; gap: 8px; align-items: stretch; min-width: 0; }
+  .snippet-row code.snippet { flex: 1; margin-bottom: 0; min-width: 0; }
+
+  button.copy {
+    flex: none;
+    border: 1px solid var(--border);
+    background: #11151d;
+    color: var(--muted);
+    border-radius: 10px;
+    padding: 0 12px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    min-height: 44px;
+  }
+  button.copy:active { background: #1b212c; }
+  button.copy.done { color: var(--ok); border-color: rgba(134, 239, 172, 0.4); }
+
+  input:not([type="range"]):not([type="file"]):not([type="color"]),
+  select {
+    width: 100%;
+    min-height: 48px;
+    padding: 11px 13px;
+    font-size: 1rem; /* >=16px avoids iOS zoom-on-focus */
+    color: var(--text);
+    background: #0b0e14;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    outline: none;
+    appearance: none;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.16);
+  }
+
+  input[type="color"] {
+    width: 100%;
+    min-height: 48px;
+    padding: 4px;
+    background: #0b0e14;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+  }
+
+  input[type="range"] { width: 100%; }
+
+  input[type="file"] {
+    width: 100%;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .grid-2 > * { min-width: 0; }
+  @media (max-width: 460px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* Reference table */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    table-layout: fixed;
+  }
+  thead th:nth-child(1) { width: 26%; }
+  thead th:nth-child(2) { width: 46%; }
+  thead th:nth-child(3) { width: 28%; }
+  th, td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+  th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+  td code, .pill {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    background: #0b0e14;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1px 6px;
+    color: #cbd5e1;
+  }
+  td code { white-space: normal; overflow-wrap: anywhere; }
+  .pill { white-space: nowrap; }
+
+  /* Stack the reference table into cards on narrow screens */
+  @media (max-width: 560px) {
+    .table-wrap { overflow: visible; }
+    table { display: block; table-layout: auto; font-size: 0.86rem; }
+    thead { display: none; }
+    tbody, tr, td { display: block; }
+    tr {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    tr:last-child { border-bottom: 0; padding-bottom: 0; }
+    td { border: 0; padding: 2px 0; overflow-wrap: normal; }
+    td:nth-child(1) { font-weight: 600; margin-bottom: 4px; }
+    td:nth-child(2)::before,
+    td:nth-child(3)::before {
+      content: attr(data-label);
+      display: inline-block;
+      min-width: 5.2em;
+      color: var(--muted);
+      font-size: 0.76rem;
+    }
+    td:nth-child(2) code,
+    td:nth-child(3) code { overflow-wrap: anywhere; }
+  }
+
+  .callout {
+    margin-top: 12px;
+    padding: 11px 13px;
+    border-radius: 11px;
+    border: 1px solid rgba(125, 211, 252, 0.28);
+    background: rgba(125, 211, 252, 0.07);
+    font-size: 0.84rem;
+    color: #d5e6f5;
+  }
+  .callout b { color: var(--accent); }
+
+  footer {
+    max-width: 720px;
+    margin: 18px auto 0;
+    padding: 0 18px;
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+
+  /* Sticky event log */
+  .log {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    width: min(720px, calc(100% - 24px));
+    z-index: 50;
+  }
+  .log-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(17, 21, 29, 0.92);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    color: var(--muted);
+    user-select: none;
+  }
+  .log-head .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px rgba(125, 211, 252, 0.15);
+    flex: none;
+  }
+  .log-head .spacer { flex: 1; }
+  .log-head .chev { transition: transform 0.2s ease; }
+  .log.open .log-head .chev { transform: rotate(180deg); }
+  .log-body {
+    display: none;
+    margin-top: 8px;
+    max-height: 40vh;
+    overflow: auto;
+    background: rgba(11, 14, 20, 0.96);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.74rem;
+    color: #cbd5e1;
+  }
+  .log.open .log-body { display: block; }
+  .log-body .row { padding: 3px 0; border-bottom: 1px solid rgba(42, 47, 58, 0.6); }
+  .log-body .row:last-child { border-bottom: 0; }
+  .log-body .ev { color: var(--accent); }
+  .log-body .id { color: var(--accent-2); }
+  .log-body .empty { color: var(--muted); }
+  button.clear {
+    border: 1px solid var(--border);
+    background: #11151d;
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 3px 9px;
+    font-size: 0.72rem;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div>
+      <h1 data-i18n="doc.title">Mobile Input &amp; Keyboard Demo</h1>
+      <p class="lede" data-i18n-html="lede">
+        A single page of input <code class="pill">type</code> /
+        <code class="pill">inputmode</code> / <code class="pill">enterkeyhint</code>
+        combinations. Open it on a phone and tap each field to see which keyboard appears.
+      </p>
+    </div>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true" lang="en">EN</button>
+      <button type="button" data-lang="zh" aria-pressed="false" lang="zh-CN">中文</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- 1 -->
+  <section>
+    <h2><span class="num">1</span> <span data-i18n="sec1.title">The numeric numpad</span></h2>
+    <p class="section-note" data-i18n-html="sec1.note">
+      <code class="pill">inputmode="numeric"</code> shows a digits-only keypad.
+      Adding <code class="pill">pattern="[0-9]*"</code> makes older iOS honor a
+      digits-only layout too, while <code class="pill">type="text"</code> avoids the
+      quirks of <code class="pill">type="number"</code> (no <code>e</code>/<code>+</code>,
+      no spinner, no scroll-wheel accidents).
+    </p>
+
+    <div class="field">
+      <div class="field-head">
+        <span class="field-name" data-i18n="sec1.f1.name">Digit-only</span>
+        <span class="hint" data-i18n="sec1.f1.hint">the combo you mentioned</span>
+      </div>
+      <div class="snippet-row">
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"text"</span> <span class="k">inputmode</span>=<span class="v">"numeric"</span> <span class="k">pattern</span>=<span class="v">"[0-9]*"</span>&gt;</code>
+        <button class="copy" data-copy='<input type="text" inputmode="numeric" pattern="[0-9]*">'>Copy</button>
+      </div>
+      <input id="in-numeric" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="0 1 2 3 4 5">
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <span class="field-name" data-i18n="sec1.f2.name">Decimal / price</span>
+        <span class="hint" data-i18n="sec1.f2.hint">digits + separator</span>
+      </div>
+      <div class="snippet-row">
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"text"</span> <span class="k">inputmode</span>=<span class="v">"decimal"</span>&gt;</code>
+        <button class="copy" data-copy='<input type="text" inputmode="decimal">'>Copy</button>
+      </div>
+      <input id="in-decimal" type="text" inputmode="decimal" placeholder="12.99">
+    </div>
+
+    <div class="field">
+      <div class="field-head">
+        <span class="field-name" data-i18n="sec1.f3.name">One-time code (OTP)</span>
+        <span class="hint" data-i18n="sec1.f3.hint">numpad + SMS autofill</span>
+      </div>
+      <div class="snippet-row">
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"text"</span> <span class="k">inputmode</span>=<span class="v">"numeric"</span> <span class="k">autocomplete</span>=<span class="v">"one-time-code"</span> <span class="k">maxlength</span>=<span class="v">"6"</span>&gt;</code>
+        <button class="copy" data-copy='<input type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*">'>Copy</button>
+      </div>
+      <input id="in-otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]*" placeholder="123456">
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section>
+    <h2><span class="num">2</span> <code class="pill">inputmode</code> <span data-i18n="sec2.title">values</span></h2>
+    <p class="section-note" data-i18n-html="sec2.note">
+      Every field below is <code class="pill">type="text"</code> — only the
+      <code class="pill">inputmode</code> changes, so you can compare the keyboards directly.
+    </p>
+
+    <div class="field">
+      <div class="field-head"><span class="field-name">none</span><span class="hint" data-i18n="hint.none">no on-screen keyboard</span></div>
+      <code class="snippet">&lt;<span class="k">input</span> <span class="k">inputmode</span>=<span class="v">"none"</span>&gt;</code>
+      <input id="im-none" type="text" inputmode="none" data-i18n-ph="ph.nokbd" placeholder="tap me — no keyboard">
+    </div>
+
+    <div class="field">
+      <div class="field-head"><span class="field-name">text</span><span class="hint" data-i18n="hint.text">default QWERTY</span></div>
+      <code class="snippet">&lt;<span class="k">input</span> <span class="k">inputmode</span>=<span class="v">"text"</span>&gt;</code>
+      <input id="im-text" type="text" inputmode="text" data-i18n-ph="ph.text" placeholder="plain text keyboard">
+    </div>
+
+    <div class="field">
+      <div class="field-head"><span class="field-name">tel</span><span class="hint" data-i18n="hint.tel">phone keypad with symbols</span></div>
+      <code class="snippet">&lt;<span class="k">input</span> <span class="k">inputmode</span>=<span class="v">"tel"</span>&gt;</code>
+      <input id="im-tel" type="text" inputmode="tel" placeholder="+1 555 0100">
+    </div>
+
+    <div class="field">
+      <div class="field-head"><span class="field-name">search</span><span class="hint" data-i18n="hint.search">keyboard with "Search" key</span></div>
+      <code class="snippet">&lt;<span class="k">input</span> <span class="k">inputmode</span>=<span class="v">"search"</span>&gt;</code>
+      <input id="im-search" type="text" inputmode="search" data-i18n-ph="ph.search" placeholder="search…">
+    </div>
+
+    <div class="field">
+      <div class="field-head"><span class="field-name">email</span><span class="hint" data-i18n="hint.email">keyboard with @ and .</span></div>
+      <code class="snippet">&lt;<span class="k">input</span> <span class="k">inputmode</span>=<span class="v">"email"</span>&gt;</code>
+      <input id="im-email" type="text" inputmode="email" placeholder="you@example.com">
+    </div>
+
+    <div class="field">
+      <div class="field-head"><span class="field-name">url</span><span class="hint" data-i18n="hint.url">keyboard with / and .com</span></div>
+      <code class="snippet">&lt;<span class="k">input</span> <span class="k">inputmode</span>=<span class="v">"url"</span>&gt;</code>
+      <input id="im-url" type="text" inputmode="url" placeholder="https://example.com">
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section>
+    <h2><span class="num">3</span> <code class="pill">type</code> <span data-i18n="sec3.title">that changes the keyboard</span></h2>
+    <p class="section-note" data-i18n-html="sec3.note">
+      These types both validate and pick a keyboard. Use them when you also want
+      built-in validation or semantics.
+    </p>
+
+    <div class="grid-2">
+      <div class="field">
+        <div class="field-head"><span class="field-name">email</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"email"</span>&gt;</code>
+        <input id="t-email" type="email" autocomplete="email" placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-name">tel</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"tel"</span>&gt;</code>
+        <input id="t-tel" type="tel" autocomplete="tel" placeholder="+1 555 0100">
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-name">url</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"url"</span>&gt;</code>
+        <input id="t-url" type="url" autocomplete="url" placeholder="https://example.com">
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-name">search</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"search"</span>&gt;</code>
+        <input id="t-search" type="search" data-i18n-ph="ph.search" placeholder="search…">
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-name">number</span><span class="hint" data-i18n="hint.number">has spinner + allows e/+</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"number"</span>&gt;</code>
+        <input id="t-number" type="number" step="any" placeholder="3.14">
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-name">password</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"password"</span>&gt;</code>
+        <input id="t-password" type="password" autocomplete="current-password" placeholder="••••••••">
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section>
+    <h2><span class="num">4</span> <span data-i18n="sec4.title">Native pickers</span></h2>
+    <p class="section-note" data-i18n-html="sec4.note">
+      These open the platform's date/time/color widgets instead of a plain keyboard.
+    </p>
+
+    <div class="grid-2">
+      <div class="field">
+        <div class="field-head"><span class="field-name">date</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"date"</span>&gt;</code>
+        <input id="p-date" type="date">
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-name">time</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"time"</span>&gt;</code>
+        <input id="p-time" type="time">
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-name">datetime-local</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"datetime-local"</span>&gt;</code>
+        <input id="p-datetime" type="datetime-local">
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-name">month</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"month"</span>&gt;</code>
+        <input id="p-month" type="month">
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-name">week</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"week"</span>&gt;</code>
+        <input id="p-week" type="week">
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-name">color</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"color"</span>&gt;</code>
+        <input id="p-color" type="color" value="#7dd3fc">
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:4px">
+      <div class="field-head"><span class="field-name">range</span><span class="hint" data-i18n="hint.range">slider</span></div>
+      <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"range"</span> <span class="k">min</span>=<span class="v">"0"</span> <span class="k">max</span>=<span class="v">"100"</span>&gt;</code>
+      <input id="p-range" type="range" min="0" max="100" value="50">
+    </div>
+
+    <div class="field" style="margin-top:4px">
+      <div class="field-head"><span class="field-name">file</span><span class="hint" data-i18n="hint.file">camera / gallery / files</span></div>
+      <code class="snippet">&lt;<span class="k">input</span> <span class="k">type</span>=<span class="v">"file"</span> <span class="k">accept</span>=<span class="v">"image/*"</span> <span class="k">capture</span>=<span class="v">"environment"</span>&gt;</code>
+      <input id="p-file" type="file" accept="image/*" capture="environment">
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section>
+    <h2><span class="num">5</span> <code class="pill">enterkeyhint</code></h2>
+    <p class="section-note" data-i18n-html="sec5.note">
+      Changes the label/behavior of the return key. Try each one on the phone.
+    </p>
+
+    <div class="grid-2">
+      <div class="field">
+        <div class="field-head"><span class="field-name">done</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">enterkeyhint</span>=<span class="v">"done"</span>&gt;</code>
+        <input id="ek-done" type="text" enterkeyhint="done" placeholder="done">
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-name">go</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">enterkeyhint</span>=<span class="v">"go"</span>&gt;</code>
+        <input id="ek-go" type="text" enterkeyhint="go" placeholder="go">
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-name">next</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">enterkeyhint</span>=<span class="v">"next"</span>&gt;</code>
+        <input id="ek-next" type="text" enterkeyhint="next" placeholder="next">
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-name">previous</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">enterkeyhint</span>=<span class="v">"previous"</span>&gt;</code>
+        <input id="ek-prev" type="text" enterkeyhint="previous" placeholder="previous">
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-name">search</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">enterkeyhint</span>=<span class="v">"search"</span>&gt;</code>
+        <input id="ek-search" type="search" enterkeyhint="search" placeholder="search">
+      </div>
+      <div class="field">
+        <div class="field-head"><span class="field-name">send</span></div>
+        <code class="snippet">&lt;<span class="k">input</span> <span class="k">enterkeyhint</span>=<span class="v">"send"</span>&gt;</code>
+        <input id="ek-send" type="text" enterkeyhint="send" placeholder="send">
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section>
+    <h2><span class="num">6</span> <span data-i18n="sec6.title">Cheat sheet</span></h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-i18n="tbl.goal">Goal</th>
+            <th data-i18n="tbl.use">Use</th>
+            <th data-i18n="tbl.keyboard">Keyboard</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-i18n="row.digits">Digits only</td>
+            <td data-label-key="tbl.use"><code>type="text" inputmode="numeric" pattern="[0-9]*"</code></td>
+            <td data-label-key="tbl.keyboard" data-i18n="kb.numpad">Number pad</td>
+          </tr>
+          <tr>
+            <td data-i18n="row.decimal">Numbers with decimal</td>
+            <td data-label-key="tbl.use"><code>inputmode="decimal"</code></td>
+            <td data-label-key="tbl.keyboard" data-i18n-html="kb.decimal">Number pad + <code>.</code></td>
+          </tr>
+          <tr>
+            <td data-i18n="row.phone">Phone number</td>
+            <td data-label-key="tbl.use"><code>type="tel"</code></td>
+            <td data-label-key="tbl.keyboard" data-i18n="kb.phone">Phone pad</td>
+          </tr>
+          <tr>
+            <td data-i18n="row.email">Email</td>
+            <td data-label-key="tbl.use"><code>type="email"</code></td>
+            <td data-label-key="tbl.keyboard" data-i18n-html="kb.email">QWERTY + <code>@</code></td>
+          </tr>
+          <tr>
+            <td data-i18n="row.website">Website</td>
+            <td data-label-key="tbl.use"><code>type="url"</code></td>
+            <td data-label-key="tbl.keyboard" data-i18n-html="kb.website">QWERTY + <code>/</code> <code>.com</code></td>
+          </tr>
+          <tr>
+            <td data-i18n="row.otp">OTP / PIN</td>
+            <td data-label-key="tbl.use"><code>inputmode="numeric" autocomplete="one-time-code"</code></td>
+            <td data-label-key="tbl.keyboard" data-i18n="kb.otp">Number pad + SMS autofill</td>
+          </tr>
+          <tr>
+            <td data-i18n="row.date">Date</td>
+            <td data-label-key="tbl.use"><code>type="date"</code></td>
+            <td data-label-key="tbl.keyboard" data-i18n="kb.date">Native date picker</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout" data-i18n-html="callout">
+      <b>Why not <code>type="number"</code> for IDs/OTP?</b>
+      It accepts <code>e</code>, <code>+</code>, <code>-</code> and shows stepper arrows;
+      it also can't keep a leading zero (e.g. <code>007</code>). Prefer
+      <code>type="text" inputmode="numeric" pattern="[0-9]*"</code> — it gives the
+      same number pad without those problems.
+    </div>
+  </section>
+
+</main>
+
+<footer data-i18n="footer">
+  Single self-contained file. Keyboard layouts vary by OS/browser — test on your device.
+</footer>
+
+<!-- Event log -->
+<div class="log" id="log">
+  <div class="log-head" id="logHead">
+    <span class="dot"></span>
+    <span id="logTitle">Event log</span>
+    <span class="spacer"></span>
+    <span class="chev">▲</span>
+  </div>
+  <div class="log-body" id="logBody">
+    <div class="empty">Tap a field to see events…</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ------------------------------------------------------------------ *
+   * i18n dictionaries
+   * ------------------------------------------------------------------ */
+  var I18N = {
+    en: {
+      'doc.title': 'Mobile Input & Keyboard Demo',
+      'doc.desc': 'A single-file demo of mobile HTML input type, inputmode and enterkeyhint combinations.',
+      'lede': 'A single page of input <code class="pill">type</code> / <code class="pill">inputmode</code> / <code class="pill">enterkeyhint</code> combinations. Open it on a phone and tap each field to see which keyboard appears.',
+
+      'sec1.title': 'The numeric numpad',
+      'sec1.note': '<code class="pill">inputmode="numeric"</code> shows a digits-only keypad. Adding <code class="pill">pattern="[0-9]*"</code> makes older iOS honor a digits-only layout too, while <code class="pill">type="text"</code> avoids the quirks of <code class="pill">type="number"</code> (no <code>e</code>/<code>+</code>, no spinner, no scroll-wheel accidents).',
+      'sec1.f1.name': 'Digit-only',
+      'sec1.f1.hint': 'the combo you mentioned',
+      'sec1.f2.name': 'Decimal / price',
+      'sec1.f2.hint': 'digits + separator',
+      'sec1.f3.name': 'One-time code (OTP)',
+      'sec1.f3.hint': 'numpad + SMS autofill',
+
+      'sec2.title': 'values',
+      'sec2.note': 'Every field below is <code class="pill">type="text"</code> — only the <code class="pill">inputmode</code> changes, so you can compare the keyboards directly.',
+      'hint.none': 'no on-screen keyboard',
+      'hint.text': 'default QWERTY',
+      'hint.tel': 'phone keypad with symbols',
+      'hint.search': 'keyboard with "Search" key',
+      'hint.email': 'keyboard with @ and .',
+      'hint.url': 'keyboard with / and .com',
+      'ph.nokbd': 'tap me — no keyboard',
+      'ph.text': 'plain text keyboard',
+      'ph.search': 'search…',
+
+      'sec3.title': 'that changes the keyboard',
+      'sec3.note': 'These types both validate and pick a keyboard. Use them when you also want built-in validation or semantics.',
+      'hint.number': 'has spinner + allows e/+',
+
+      'sec4.title': 'Native pickers',
+      'sec4.note': "These open the platform's date/time/color widgets instead of a plain keyboard.",
+      'hint.range': 'slider',
+      'hint.file': 'camera / gallery / files',
+
+      'sec5.title': 'enterkeyhint',
+      'sec5.note': 'Changes the label/behavior of the return key. Try each one on the phone.',
+
+      'sec6.title': 'Cheat sheet',
+      'tbl.goal': 'Goal',
+      'tbl.use': 'Use',
+      'tbl.keyboard': 'Keyboard',
+      'row.digits': 'Digits only',
+      'row.decimal': 'Numbers with decimal',
+      'row.phone': 'Phone number',
+      'row.email': 'Email',
+      'row.website': 'Website',
+      'row.otp': 'OTP / PIN',
+      'row.date': 'Date',
+      'kb.numpad': 'Number pad',
+      'kb.decimal': 'Number pad + <code>.</code>',
+      'kb.phone': 'Phone pad',
+      'kb.email': 'QWERTY + <code>@</code>',
+      'kb.website': 'QWERTY + <code>/</code> <code>.com</code>',
+      'kb.otp': 'Number pad + SMS autofill',
+      'kb.date': 'Native date picker',
+      'callout': '<b>Why not <code>type="number"</code> for IDs/OTP?</b> It accepts <code>e</code>, <code>+</code>, <code>-</code> and shows stepper arrows; it also can\'t keep a leading zero (e.g. <code>007</code>). Prefer <code>type="text" inputmode="numeric" pattern="[0-9]*"</code> — it gives the same number pad without those problems.',
+
+      'footer': 'Single self-contained file. Keyboard layouts vary by OS/browser — test on your device.',
+      'log.title': 'Event log',
+      'log.empty': 'Tap a field to see events…',
+      'log.clear': 'clear',
+      'copy': 'Copy',
+      'copied': 'Copied'
+    },
+
+    zh: {
+      'doc.title': '移动端输入与键盘演示',
+      'doc.desc': '单文件演示移动端 HTML 的 input type、inputmode 与 enterkeyhint 组合。',
+      'lede': '一个页面演示 <code class="pill">type</code> / <code class="pill">inputmode</code> / <code class="pill">enterkeyhint</code> 的各种组合。在手机上打开，逐个点击输入框即可看到弹出的键盘。',
+
+      'sec1.title': '数字小键盘',
+      'sec1.note': '<code class="pill">inputmode="numeric"</code> 会弹出纯数字键盘。再加上 <code class="pill">pattern="[0-9]*"</code> 可让旧版 iOS 也使用纯数字布局；而 <code class="pill">type="text"</code> 能避开 <code class="pill">type="number"</code> 的一些问题（允许 <code>e</code>/<code>+</code>、出现步进箭头、滚轮误改数值）。',
+      'sec1.f1.name': '纯数字',
+      'sec1.f1.hint': '你提到的组合方式',
+      'sec1.f2.name': '小数 / 价格',
+      'sec1.f2.hint': '数字 + 小数点',
+      'sec1.f3.name': '一次性验证码（OTP）',
+      'sec1.f3.hint': '数字键盘 + 短信自动填充',
+
+      'sec2.title': '取值',
+      'sec2.note': '下面每个输入框都是 <code class="pill">type="text"</code>，只有 <code class="pill">inputmode</code> 不同，方便直接对比键盘。',
+      'hint.none': '不弹出屏幕键盘',
+      'hint.text': '默认 QWERTY 键盘',
+      'hint.tel': '带符号的电话键盘',
+      'hint.search': '带“搜索”键的键盘',
+      'hint.email': '带 @ 和 . 的键盘',
+      'hint.url': '带 / 和 .com 的键盘',
+      'ph.nokbd': '点我 — 不弹键盘',
+      'ph.text': '普通文本键盘',
+      'ph.search': '搜索…',
+
+      'sec3.title': '会改变键盘的 type',
+      'sec3.note': '这些 type 既会改变键盘，也自带校验和语义，需要校验时优先使用。',
+      'hint.number': '带步进箭头，允许 e/+',
+
+      'sec4.title': '原生选择器',
+      'sec4.note': '这些会打开系统的日期 / 时间 / 颜色等原生部件，而不是普通键盘。',
+      'hint.range': '滑块',
+      'hint.file': '相机 / 相册 / 文件',
+
+      'sec5.title': 'enterkeyhint',
+      'sec5.note': '改变回车键的文字与行为，在手机上逐个试用。',
+
+      'sec6.title': '速查表',
+      'tbl.goal': '目标',
+      'tbl.use': '用法',
+      'tbl.keyboard': '键盘',
+      'row.digits': '仅数字',
+      'row.decimal': '带小数的数字',
+      'row.phone': '电话号码',
+      'row.email': '邮箱',
+      'row.website': '网站',
+      'row.otp': '验证码 / PIN',
+      'row.date': '日期',
+      'kb.numpad': '数字键盘',
+      'kb.decimal': '数字键盘 + <code>.</code>',
+      'kb.phone': '电话键盘',
+      'kb.email': 'QWERTY + <code>@</code>',
+      'kb.website': 'QWERTY + <code>/</code> <code>.com</code>',
+      'kb.otp': '数字键盘 + 短信自动填充',
+      'kb.date': '原生日期选择器',
+      'callout': '<b>为什么证件号 / 验证码不要用 <code>type="number"</code>？</b> 它会接受 <code>e</code>、<code>+</code>、<code>-</code>，还会显示步进箭头，而且无法保留前导零（如 <code>007</code>）。建议使用 <code>type="text" inputmode="numeric" pattern="[0-9]*"</code> —— 同样弹出数字键盘，却没有这些问题。',
+
+      'footer': '单个自包含文件。键盘布局因系统 / 浏览器而异 —— 请在你的设备上实际测试。',
+      'log.title': '事件日志',
+      'log.empty': '点击任意输入框查看事件…',
+      'log.clear': '清空',
+      'copy': '复制',
+      'copied': '已复制'
+    }
+  };
+
+  var STORAGE_KEY = 'inputs-demo-lang';
+  var DICT = I18N.en;
+  var currentLang = 'en';
+
+  function t(key) {
+    return (DICT && DICT[key] != null) ? DICT[key] : (I18N.en[key] != null ? I18N.en[key] : key);
+  }
+
+  function detectLang() {
+    try {
+      var saved = localStorage.getItem(STORAGE_KEY);
+      if (saved === 'en' || saved === 'zh') return saved;
+    } catch (e) { /* storage may be blocked */ }
+
+    var list = (navigator.languages && navigator.languages.length)
+      ? navigator.languages
+      : [navigator.language || navigator.userLanguage || 'en'];
+    for (var i = 0; i < list.length; i++) {
+      if (String(list[i]).toLowerCase().indexOf('zh') === 0) return 'zh';
+    }
+    return 'en';
+  }
+
+  /* DOM refs */
+  var log = document.getElementById('log');
+  var logHead = document.getElementById('logHead');
+  var logBody = document.getElementById('logBody');
+  var logTitle = document.getElementById('logTitle');
+  var count = 0;
+  var MAX = 40;
+  var clearBtn = null;
+
+  function updateLogTitle() {
+    logTitle.textContent = t('log.title') + (count > 0 ? ' (' + count + ')' : '');
+  }
+
+  function applyLang(lang) {
+    currentLang = (lang === 'zh') ? 'zh' : 'en';
+    DICT = I18N[currentLang];
+    document.documentElement.lang = (currentLang === 'zh') ? 'zh-CN' : 'en';
+    document.documentElement.setAttribute('data-lang', currentLang);
+
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      el.textContent = t(el.getAttribute('data-i18n'));
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(function (el) {
+      el.innerHTML = t(el.getAttribute('data-i18n-html'));
+    });
+    document.querySelectorAll('[data-i18n-ph]').forEach(function (el) {
+      el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph')));
+    });
+    document.querySelectorAll('[data-label-key]').forEach(function (el) {
+      el.setAttribute('data-label', t(el.getAttribute('data-label-key')));
+    });
+
+    document.title = t('doc.title');
+    var md = document.querySelector('meta[name="description"]');
+    if (md) md.setAttribute('content', t('doc.desc'));
+
+    document.querySelectorAll('.lang-switch button').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.getAttribute('data-lang') === currentLang ? 'true' : 'false');
+    });
+
+    document.querySelectorAll('button.copy').forEach(function (b) {
+      if (!b.classList.contains('done')) b.textContent = t('copy');
+    });
+    if (clearBtn) clearBtn.textContent = t('log.clear');
+    var emptyEl = logBody.querySelector('.empty');
+    if (emptyEl) emptyEl.textContent = t('log.empty');
+    updateLogTitle();
+  }
+
+  /* Language switch buttons */
+  document.querySelectorAll('.lang-switch button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var lang = btn.getAttribute('data-lang');
+      try { localStorage.setItem(STORAGE_KEY, lang); } catch (e) {}
+      applyLang(lang);
+    });
+  });
+
+  /* Copy buttons */
+  document.querySelectorAll('button.copy').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = btn.getAttribute('data-copy');
+      var done = function () {
+        btn.classList.add('done');
+        btn.textContent = t('copied');
+        setTimeout(function () {
+          btn.classList.remove('done');
+          btn.textContent = t('copy');
+        }, 1200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, done);
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        done();
+      }
+    });
+  });
+
+  /* Event log */
+  logHead.addEventListener('click', function () { log.classList.toggle('open'); });
+
+  function record(ev, el) {
+    count++;
+    updateLogTitle();
+    var empty = logBody.querySelector('.empty');
+    if (empty) empty.remove();
+    var row = document.createElement('div');
+    row.className = 'row';
+    var value = 'value' in el ? String(el.value).slice(0, 40) : '';
+    row.innerHTML =
+      '<span class="ev">' + ev + '</span> ' +
+      '<span class="id">#' + (el.id || el.tagName.toLowerCase()) + '</span>' +
+      (value ? ' → ' + value.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '');
+    logBody.insertBefore(row, logBody.firstChild);
+    while (logBody.children.length > MAX) logBody.removeChild(logBody.lastChild);
+  }
+
+  document.querySelectorAll('input, select').forEach(function (el) {
+    el.addEventListener('focus', function () {
+      if (!log.classList.contains('open')) log.classList.add('open');
+      record('focus', el);
+    });
+    el.addEventListener('input', function () { record('input', el); });
+    el.addEventListener('change', function () { record('change', el); });
+  });
+
+  /* Clear button in log header */
+  clearBtn = document.createElement('button');
+  clearBtn.className = 'clear';
+  clearBtn.textContent = 'clear';
+  clearBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    logBody.innerHTML = '<div class="empty"></div>';
+    logBody.querySelector('.empty').textContent = t('log.empty');
+    count = 0;
+    updateLogTitle();
+  });
+  logHead.insertBefore(clearBtn, logHead.querySelector('.chev'));
+
+  /* Init */
+  applyLang(detectLang());
+})();
+</script>
+
+</body>
+</html>
